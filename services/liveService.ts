@@ -37,8 +37,7 @@ export class LiveService {
 
   async connect(videoStream: MediaStream, audioStream: MediaStream) {
     if (!API_KEY) {
-      console.error("No API Key provided.");
-      return;
+      throw new Error("API Key not found in environment variables.");
     }
 
     this.active = true;
@@ -96,8 +95,8 @@ export class LiveService {
       this.sessionPromise = this.ai.live.connect(config);
       await this.sessionPromise;
     } catch (e) {
-      console.error("Failed to connect to Live API", e);
       this.active = false;
+      throw e;
     }
   }
 

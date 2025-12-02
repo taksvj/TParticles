@@ -31,11 +31,6 @@ const App: React.FC = () => {
   }, []);
 
   const handleConnect = async () => {
-    if (!process.env.API_KEY) {
-      alert("API Key missing in environment variables.");
-      return;
-    }
-
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { width: 320, height: 240 }, // Low res for AI token efficiency
@@ -52,8 +47,11 @@ const App: React.FC = () => {
       setIsConnected(true);
 
     } catch (err) {
-      console.error("Error accessing camera:", err);
-      alert("Could not access camera or microphone. Please allow permissions.");
+      console.error("Connection failed:", err);
+      // Only alert for camera permissions, not generic errors which might be API key related (logged to console)
+      if (err instanceof DOMException && (err.name === 'NotAllowedError' || err.name === 'NotFoundError')) {
+         alert("Could not access camera or microphone. Please allow permissions.");
+      }
     }
   };
 
