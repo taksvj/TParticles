@@ -103,8 +103,8 @@ const Particles: React.FC<SceneProps> = ({ shape, color, expansion, trailLength 
     array.copyWithin(PARTICLE_COUNT * 3, 0, shiftSize);
 
     // 2. Calculate new Head positions
-    const targetScale = 0.5 + (expansion * 2.0); 
-    const rotSpeed = 0.1 + expansion * 0.5;
+    const targetScale = 0.5 + (expansion * 2.5); // More dramatic scaling for real-time feel
+    const rotSpeed = 0.15 + expansion * 0.8; // Faster rotation for more dynamic response
     const angle = time * rotSpeed;
     const cosA = Math.cos(angle);
     const sinA = Math.sin(angle);
@@ -117,8 +117,8 @@ const Particles: React.FC<SceneProps> = ({ shape, color, expansion, trailLength 
       const by = templatePositions[idx + 1];
       const bz = templatePositions[idx + 2];
 
-      // Noise
-      const noise = Math.sin(time * 0.5 + bx * 0.5) * 0.05;
+      // Optimized noise for real-time performance
+      const noise = Math.sin(time * 0.8 + bx * 0.3) * 0.03 * (1 + expansion);
 
       // Rotation
       const rx = bx * cosA - bz * sinA;

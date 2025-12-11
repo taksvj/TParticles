@@ -136,10 +136,16 @@ export class LiveService {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     
-    // Increased frame rate for better responsiveness (approx 4 FPS)
-    const INTERVAL = 250; 
+    // Higher frame rate for smooth real-time gesture control (8 FPS)
+    const INTERVAL = 125; 
+
+    let lastFrameTime = 0;
+    const TARGET_FPS = 8;
+    const FRAME_INTERVAL = 1000 / TARGET_FPS;
 
     const intervalId = setInterval(async () => {
+      const now = performance.now();
+      
       if (!this.active || !this.sessionPromise) {
         clearInterval(intervalId);
         videoEl.pause();
@@ -147,13 +153,20 @@ export class LiveService {
         return;
       }
 
+      // Skip frames if we're running behind to maintain responsiveness
+      if (now - lastFrameTime < FRAME_INTERVAL) {
+        return;
+      }
+      
+      lastFrameTime = now;
+
       try {
         if (videoEl.readyState >= 2 && ctx) {
-            canvas.width = videoEl.videoWidth / 4; // Downscale for performance
-            canvas.height = videoEl.videoHeight / 4;
+            canvas.width = videoEl.videoWidth / 6; // More aggressive downscale for faster processing
+            canvas.height = videoEl.videoHeight / 6;
             
             ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-            const base64 = canvas.toDataURL('image/jpeg', 0.5).split(',')[1];
+            const base64 = canvas.toDataURL('image/jpeg', 0.4).split(',')[1]; // Lower quality for speed
             
             this.sessionPromise.then((session) => {
                 session.sendRealtimeInput({
