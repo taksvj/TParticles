@@ -51,7 +51,7 @@ export const Controls: React.FC<ControlsProps> = ({
             <div className="flex items-center gap-2 bg-black/30 backdrop-blur-md px-3 py-1 md:px-4 md:py-2 rounded-full border border-green-500/30">
               <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-green-500 rounded-full animate-pulse"></div>
               <span className="text-[10px] md:text-xs font-mono text-green-400">
-                LIVE
+                REAL-TIME AI
               </span>
             </div>
           )}

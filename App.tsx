@@ -22,7 +22,7 @@ const App: React.FC = () => {
     const animate = () => {
       setExpansion(prev => {
         const diff = targetExpansion.current - prev;
-        return prev + diff * 0.05; // Smooth factor
+        return prev + diff * 0.15; // More responsive interpolation for real-time feel
       });
       frameId = requestAnimationFrame(animate);
     };
@@ -39,7 +39,10 @@ const App: React.FC = () => {
       
       const service = new LiveService((val) => {
         console.log("Gemini says expansion:", val);
+        // More aggressive clamping and direct update for real-time responsiveness
         targetExpansion.current = Math.max(0, Math.min(1, val));
+        // Force immediate update for critical responsiveness
+        setExpansion(targetExpansion.current);
       });
 
       await service.connect(stream, stream); // Pass stream for both video and audio context setup
