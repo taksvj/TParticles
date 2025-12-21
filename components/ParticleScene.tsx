@@ -94,12 +94,9 @@ const Particles: React.FC<SceneProps> = ({ shape, color, expansion, trailLength 
     const positionAttribute = geometry.attributes.position as THREE.BufferAttribute;
 
     // 1. Shift positions down to create trails
-    // We copy the range [0 ... End-Batch] to [Batch ... End]
-    // effectively: Trail_N = Trail_{N-1}, Trail_1 = Head
     const array = positionAttribute.array as Float32Array;
     const shiftSize = (MAX_TRAIL_LENGTH - 1) * PARTICLE_COUNT * 3;
     
-    // copyWithin(target, start, end)
     array.copyWithin(PARTICLE_COUNT * 3, 0, shiftSize);
 
     // 2. Calculate new Head positions
@@ -112,25 +109,20 @@ const Particles: React.FC<SceneProps> = ({ shape, color, expansion, trailLength 
     for (let i = 0; i < PARTICLE_COUNT; i++) {
       const idx = i * 3;
       
-      // Original template position
       const bx = templatePositions[idx];
       const by = templatePositions[idx + 1];
       const bz = templatePositions[idx + 2];
 
-      // Noise
       const noise = Math.sin(time * 0.5 + bx * 0.5) * 0.05;
 
-      // Rotation
       const rx = bx * cosA - bz * sinA;
       const rz = bx * sinA + bz * cosA;
       const ry = by;
 
-      // Expansion
       const x = rx * targetScale + noise;
       const y = ry * targetScale + noise;
       const z = rz * targetScale + noise;
 
-      // Update ONLY the head batch (first PARTICLE_COUNT points)
       array[idx] = x;
       array[idx + 1] = y;
       array[idx + 2] = z;
@@ -139,7 +131,6 @@ const Particles: React.FC<SceneProps> = ({ shape, color, expansion, trailLength 
     positionAttribute.needsUpdate = true;
     
     // 3. Set Draw Range based on desired trail length
-    // We render 1 (head) + trailLength batches
     const visibleParticles = PARTICLE_COUNT * (1 + trailLength);
     geometry.setDrawRange(0, Math.min(visibleParticles, PARTICLE_COUNT * MAX_TRAIL_LENGTH));
   });
@@ -175,16 +166,23 @@ export const ParticleScene: React.FC<SceneProps> = (props) => {
     <div className="w-full h-full bg-black">
       <Canvas>
         <PerspectiveCamera makeDefault position={[0, 0, 8]} />
-        <OrbitControls enableZoom={false} enablePan={false} rotateSpeed={0.5} />
+        <OrbitControls 
+          enableZoom={true} 
+          enableDamping={true}
+          dampingFactor={0.05}
+          minDistance={2} 
+          maxDistance={25} 
+          enablePan={false} 
+          rotateSpeed={0.5} 
+        />
         <ambientLight intensity={0.5} />
         
         <Particles {...props} />
         
         <Environment preset="city" />
         
-        {/* Background effects */}
         <color attach="background" args={['#050505']} />
-        <fog attach="fog" args={['#050505', 5, 15]} />
+        <fog attach="fog" args={['#050505', 5, 25]} />
       </Canvas>
     </div>
   );

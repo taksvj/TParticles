@@ -10,6 +10,9 @@ interface ControlsProps {
   onTrailLengthChange: (l: number) => void;
   isConnected: boolean;
   onConnect: () => void;
+  videoDevices: MediaDeviceInfo[];
+  selectedDeviceId: string;
+  onDeviceChange: (id: string) => void;
 }
 
 const SHAPES = Object.values(ShapeType);
@@ -23,11 +26,55 @@ export const Controls: React.FC<ControlsProps> = ({
   onTrailLengthChange,
   isConnected,
   onConnect,
+  videoDevices,
+  selectedDeviceId,
+  onDeviceChange,
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
+  const [showAndroidGuide, setShowAndroidGuide] = useState(false);
 
   return (
     <div className="absolute top-0 left-0 w-full h-full pointer-events-none flex flex-col justify-between p-4 md:p-6 z-10">
+      
+      {/* Android Guide Modal */}
+      {showAndroidGuide && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-auto p-4">
+            <div className="bg-gray-900 border border-cyan-500/30 rounded-2xl p-6 max-w-md w-full shadow-[0_0_50px_rgba(6,182,212,0.2)]">
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                    <span className="text-cyan-400">📱</span> Android to Windows Camera
+                </h3>
+                <div className="space-y-4 text-sm text-gray-300">
+                    <p>Since browsers cannot directly access remote phones, you need a "Virtual Webcam" driver.</p>
+                    <ol className="list-decimal pl-5 space-y-2">
+                        <li>
+                            <strong className="text-white">Install DroidCam</strong> (Free) on your Android phone from the Play Store.
+                        </li>
+                        <li>
+                            <strong className="text-white">Install DroidCam Client</strong> on your Windows PC.
+                        </li>
+                        <li>
+                            Connect both devices to the <strong>same WiFi</strong>.
+                        </li>
+                        <li>
+                            Open the app on phone & PC. Enter the <strong>WiFi IP</strong> shown on phone into the PC client and click <strong>Start</strong>.
+                        </li>
+                    </ol>
+                    <div className="bg-cyan-900/20 p-3 rounded border border-cyan-500/20 mt-4">
+                        <p className="text-xs text-cyan-200">
+                            ✅ Once started, close this modal and select <strong>"DroidCam Source"</strong> in the Camera Input list below.
+                        </p>
+                    </div>
+                </div>
+                <button 
+                    onClick={() => setShowAndroidGuide(false)}
+                    className="mt-6 w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2 rounded-lg transition-colors"
+                >
+                    Got it
+                </button>
+            </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex justify-between items-start pointer-events-auto">
         <div>
@@ -79,8 +126,35 @@ export const Controls: React.FC<ControlsProps> = ({
         {/* Scrollable Content */}
         <div className={`overflow-y-auto px-4 pb-4 md:px-6 md:pb-6 transition-opacity duration-300 ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>
             
-            {/* Shape Selector */}
+            {/* Camera Input Section */}
             <div className="mt-2 mb-4 border-b border-white/10 pb-4">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-2">
+                    Camera Input
+                </label>
+                <div className="flex flex-col gap-2">
+                    <select 
+                        value={selectedDeviceId}
+                        onChange={(e) => onDeviceChange(e.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-cyan-500/50"
+                    >
+                        {videoDevices.length === 0 && <option value="">Searching for cameras...</option>}
+                        {videoDevices.map((device, idx) => (
+                            <option key={device.deviceId} value={device.deviceId}>
+                                {device.label || `Camera ${idx + 1} (Label hidden)`}
+                            </option>
+                        ))}
+                    </select>
+                    <button 
+                        onClick={() => setShowAndroidGuide(true)}
+                        className="text-[10px] text-cyan-400 hover:text-cyan-300 flex items-center gap-1 transition-colors self-start"
+                    >
+                        <span>📲</span> Use Android Phone via WiFi
+                    </button>
+                </div>
+            </div>
+
+            {/* Shape Selector */}
+            <div className="mb-4 border-b border-white/10 pb-4">
               <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-2">
                 Template
               </label>

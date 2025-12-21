@@ -11,10 +11,39 @@ const App: React.FC = () => {
   const [trailLength, setTrailLength] = useState<number>(10);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   
+  // Camera Device State
+  const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string>('');
+
   // Interpolated expansion for smooth UI
   const targetExpansion = useRef(0.5);
-  
   const liveServiceRef = useRef<LiveService | null>(null);
+
+  // Fetch available video devices
+  const refreshDevices = async () => {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoInputs = devices.filter(d => d.kind === 'videoinput');
+      setVideoDevices(videoInputs);
+      
+      // Auto-select first device if none selected
+      if (videoInputs.length > 0) {
+        // If current selection is invalid, reset to first
+        const currentExists = videoInputs.find(d => d.deviceId === selectedDeviceId);
+        if (!selectedDeviceId || !currentExists) {
+          setSelectedDeviceId(videoInputs[0].deviceId);
+        }
+      }
+    } catch (e) {
+      console.warn("Error enumerating devices:", e);
+    }
+  };
+
+  useEffect(() => {
+    refreshDevices();
+    navigator.mediaDevices.addEventListener('devicechange', refreshDevices);
+    return () => navigator.mediaDevices.removeEventListener('devicechange', refreshDevices);
+  }, [selectedDeviceId]);
 
   useEffect(() => {
     // Animation loop for smooth value interpolation
@@ -32,26 +61,49 @@ const App: React.FC = () => {
 
   const handleConnect = async () => {
     try {
+      // Use selected device or default
+      const videoConstraints: MediaTrackConstraints = {
+        width: 320,
+        height: 240,
+        deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined
+      };
+
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { width: 320, height: 240 }, // Low res for AI token efficiency
-        audio: true // Required by Live API even if unused
+        video: videoConstraints, 
+        audio: true 
       });
       
+      // If we successfully got a stream, refresh device list (labels might now be available)
+      refreshDevices();
+
       const service = new LiveService((val) => {
         console.log("Gemini says expansion:", val);
         targetExpansion.current = Math.max(0, Math.min(1, val));
       });
 
-      await service.connect(stream, stream); // Pass stream for both video and audio context setup
+      await service.connect(stream, stream);
       liveServiceRef.current = service;
       setIsConnected(true);
 
     } catch (err) {
       console.error("Connection failed:", err);
-      // Only alert for camera permissions, not generic errors which might be API key related (logged to console)
       if (err instanceof DOMException && (err.name === 'NotAllowedError' || err.name === 'NotFoundError')) {
-         alert("Could not access camera or microphone. Please allow permissions.");
+         alert("Camera access failed. If you are using a phone connection, ensure DroidCam is running.");
       }
+    }
+  };
+
+  const handleDeviceChange = (deviceId: string) => {
+    setSelectedDeviceId(deviceId);
+    // If we were connected, we'd ideally reconnect here, but for simplicity
+    // we let the user re-click "Enable AI" or just update state for next connection.
+    if (isConnected) {
+        alert("Camera changed. Please reconnect AI to use the new source.");
+        setIsConnected(false);
+        if (liveServiceRef.current) {
+            liveServiceRef.current.disconnect();
+            liveServiceRef.current = null;
+        }
     }
   };
 
@@ -78,6 +130,9 @@ const App: React.FC = () => {
         onTrailLengthChange={setTrailLength}
         isConnected={isConnected}
         onConnect={handleConnect}
+        videoDevices={videoDevices}
+        selectedDeviceId={selectedDeviceId}
+        onDeviceChange={handleDeviceChange}
       />
 
     </div>
